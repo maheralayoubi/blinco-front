@@ -25,7 +25,7 @@ function Home() {
         const content = showLookingForInput ? lookingForText : iCanDoText;
 
         try {
-            const response = await fetch("http://43.207.87.73:8000/prompts/", {
+            const response = await fetch("http://api.hayamachi.com/prompts/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
