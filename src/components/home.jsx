@@ -6,31 +6,41 @@ function Home() {
     const [showICanDoInput, setShowICanDoInput] = useState(false);
     const [lookingForText, setLookingForText] = useState('');
     const [iCanDoText, setICanDoText] = useState('');
+    const [matchingPrompts, setMatchingPrompts] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleLookingForClick = () => {
         setShowLookingForInput(true);
         setShowICanDoInput(false);
+        setMatchingPrompts([]);
     };
 
     const handleICanDoClick = () => {
         setShowICanDoInput(true);
         setShowLookingForInput(false);
+        setMatchingPrompts([]);
     };
 
     const handleBackClick = () => {
-        window.location.reload();
+        setShowLookingForInput(false);
+        setShowICanDoInput(false);
+        setLookingForText('');
+        setICanDoText('');
+        setMatchingPrompts([]);
     };
 
     const handleSubmit = async () => {
         const content = showLookingForInput ? lookingForText : iCanDoText;
+        const type = showLookingForInput ? "company" : "worker";
 
+        setIsLoading(true);
         try {
             const response = await fetch("https://api.hayamachi.com/prompts/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ content })
+                body: JSON.stringify({ content, type })
             });
 
             if (!response.ok) {
@@ -38,10 +48,12 @@ function Home() {
             }
             const result = await response.json();
             console.log("Response from API:", result);
-            alert("Data submitted successfully!");
+            setMatchingPrompts(result.matching_prompts || []);
         } catch (error) {
             console.error("Error:", error);
             alert("There was an error submitting your data.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -61,28 +73,74 @@ function Home() {
             {showLookingForInput && (
                 <div className="input-group">
                     <label htmlFor="lookingFor">What are you looking for</label>
-                    <input
-                        type="text"
+                    <textarea
                         id="lookingFor"
                         value={lookingForText}
                         onChange={(e) => setLookingForText(e.target.value)}
+                        disabled={isLoading}
                     />
-                    <button type="button" onClick={handleSubmit}>Submit</button>
-                    <button onClick={handleBackClick} className="back-button">Back</button>
+                    <div className="button-container">
+                        <button 
+                            type="button" 
+                            onClick={handleSubmit}
+                            disabled={isLoading}
+                            className={`submit-button ${isLoading ? 'loading' : ''}`}
+                        >
+                            {isLoading ? 'Submitting...' : 'Submit'}
+                        </button>
+                        <button 
+                            onClick={handleBackClick}
+                            disabled={isLoading}
+                            className="back-button"
+                        >
+                            Back
+                        </button>
+                    </div>
                 </div>
             )}
 
             {showICanDoInput && (
                 <div className="input-group">
                     <label htmlFor="iCanDo">What can you do</label>
-                    <input
-                        type="text"
+                    <textarea
                         id="iCanDo"
                         value={iCanDoText}
                         onChange={(e) => setICanDoText(e.target.value)}
+                        disabled={isLoading}
                     />
-                    <button type="button" onClick={handleSubmit}>Submit</button>
-                    <button onClick={handleBackClick} className="back-button">Back</button>
+                    <div className="button-container">
+                        <button 
+                            type="button" 
+                            onClick={handleSubmit}
+                            disabled={isLoading}
+                            className={`submit-button ${isLoading ? 'loading' : ''}`}
+                        >
+                            {isLoading ? 'Submitting...' : 'Submit'}
+                        </button>
+                        <button 
+                            onClick={handleBackClick}
+                            disabled={isLoading}
+                            className="back-button"
+                        >
+                            Back
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {matchingPrompts.length > 0 && (
+                <div className="matching-prompts">
+                    <h3>Matching Prompts</h3>
+                    <div className="matching-list">
+                        {matchingPrompts.map((match, index) => (
+                            <div key={index} className="match-item">
+                                <div className="match-content">{match.content}</div>
+                                <div className="match-score">
+                                    Match Score: {(match.score * 100).toFixed(2)}%
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
